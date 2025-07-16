@@ -1,23 +1,38 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>ESP32 Motor Control</title>
+  <meta charset="utf-8">
+  <title>ESP32 BLE Controller</title>
   <style>
-    body { font-family: Arial; text-align: center; padding: 30px; }
-    button { padding: 10px 30px; margin: 10px; font-size: 18px; }
-    #status, #encoder { margin-top: 20px; font-weight: bold; }
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 40px;
+    }
+    h1 {
+      margin-bottom: 30px;
+    }
+    button {
+      font-size: 20px;
+      padding: 10px 20px;
+      margin: 10px;
+    }
+    #status, #encoder {
+      margin-top: 20px;
+      font-size: 18px;
+    }
   </style>
 </head>
 <body>
-  <h1>ESP32 BLE Motor Control</h1>
-  <button id="connect">Connect to ESP32</button>
-  <button onclick="sendCommand('START')">START</button>
-  <button onclick="sendCommand('STOP')">STOP</button>
-  <div id="status">Status: Disconnected</div>
-  <div id="encoder">Encoder Position: 0</div>
+  <h1>ESP32 BLE Control Panel</h1>
+  <button id="connect">🔌 Connect to ESP32</button><br>
+  <button onclick="sendCommand('START')">▶️ Start Motor</button>
+  <button onclick="sendCommand('STOP')">⏹️ Stop Motor</button>
+  <div id="status">Status: Not connected</div>
+  <div id="encoder">Encoder Position: --</div>
 
   <script>
+    let bleServer = null;
     let bleCharacteristic = null;
 
     document.getElementById("connect").addEventListener("click", async () => {
@@ -27,26 +42,30 @@
           optionalServices: ["12345678-1234-1234-1234-1234567890ab"]
         });
 
-        const server = await device.gatt.connect();
-        const service = await server.getPrimaryService("12345678-1234-1234-1234-1234567890ab");
+        bleServer = await device.gatt.connect();
+        const service = await bleServer.getPrimaryService("12345678-1234-1234-1234-1234567890ab");
         bleCharacteristic = await service.getCharacteristic("abcdefab-1234-1234-1234-abcdefabcdef");
 
         document.getElementById("status").innerText = "Status: Connected";
 
+        // Start notifications from ESP32
         bleCharacteristic.startNotifications();
         bleCharacteristic.addEventListener("characteristicvaluechanged", event => {
           const value = new TextDecoder().decode(event.target.value);
-          document.getElementById("encoder").innerText = "Encoder Position: " + value;
+          if (value.startsWith("POS:")) {
+            document.getElementById("encoder").innerText = "Encoder Position: " + value.split(":")[1].trim();
+          }
         });
-      } catch (e) {
-        console.error(e);
+
+      } catch (error) {
+        console.error(error);
         document.getElementById("status").innerText = "Status: Connection failed";
       }
     });
 
     function sendCommand(cmd) {
       if (!bleCharacteristic) {
-        alert("Please connect to ESP32 first.");
+        alert("Not connected to BLE device.");
         return;
       }
       bleCharacteristic.writeValue(new TextEncoder().encode(cmd));
