@@ -1,24 +1,56 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ESP32 BLE Control</title>
-  <link rel="stylesheet" href="style.css">
+  <title>ESP32 Motor Control</title>
+  <style>
+    body { font-family: Arial; text-align: center; padding: 30px; }
+    button { padding: 10px 30px; margin: 10px; font-size: 18px; }
+    #status, #encoder { margin-top: 20px; font-weight: bold; }
+  </style>
 </head>
 <body>
   <h1>ESP32 BLE Motor Control</h1>
-  <button id="connect">🔗 Connect to ESP32</button>
-  <div id="status">Status: Not connected</div>
+  <button id="connect">Connect to ESP32</button>
+  <button onclick="sendCommand('START')">START</button>
+  <button onclick="sendCommand('STOP')">STOP</button>
+  <div id="status">Status: Disconnected</div>
+  <div id="encoder">Encoder Position: 0</div>
 
-  <div class="controls">
-    <button onclick="sendCommand('START')">▶️ Start Motor</button>
-    <button onclick="sendCommand('STOP')">⏹ Stop Motor</button>
-  </div>
+  <script>
+    let bleCharacteristic = null;
 
-  <div id="encoder">Encoder Position: --</div>
+    document.getElementById("connect").addEventListener("click", async () => {
+      try {
+        const device = await navigator.bluetooth.requestDevice({
+          filters: [{ namePrefix: "ESP32C3" }],
+          optionalServices: ["12345678-1234-1234-1234-1234567890ab"]
+        });
 
-  <script src="script.js"></script>
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService("12345678-1234-1234-1234-1234567890ab");
+        bleCharacteristic = await service.getCharacteristic("abcdefab-1234-1234-1234-abcdefabcdef");
+
+        document.getElementById("status").innerText = "Status: Connected";
+
+        bleCharacteristic.startNotifications();
+        bleCharacteristic.addEventListener("characteristicvaluechanged", event => {
+          const value = new TextDecoder().decode(event.target.value);
+          document.getElementById("encoder").innerText = "Encoder Position: " + value;
+        });
+      } catch (e) {
+        console.error(e);
+        document.getElementById("status").innerText = "Status: Connection failed";
+      }
+    });
+
+    function sendCommand(cmd) {
+      if (!bleCharacteristic) {
+        alert("Please connect to ESP32 first.");
+        return;
+      }
+      bleCharacteristic.writeValue(new TextEncoder().encode(cmd));
+    }
+  </script>
 </body>
 </html>
