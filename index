@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ESP32 BLE Motor Controller</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+    button { padding: 10px 20px; margin: 10px; font-size: 16px; }
+    #status { margin-top: 20px; color: green; font-weight: bold; }
+    #encoder { margin-top: 10px; color: blue; }
+  </style>
+</head>
+<body>
+  <h1>ESP32 Motor Control via BLE</h1>
+  <button onclick="connectBLE()">Connect to ESP32</button>
+  <br />
+  <button onclick="sendCommand('START')">START</button>
+  <button onclick="sendCommand('STOP')">STOP</button>
+
+  <div id="status">Not Connected</div>
+  <div id="encoder">Encoder: N/A</div>
+
+  <script>
+    const SERVICE_UUID = "12345678-1234-1234-1234-1234567890ab";
+    const CHARACTERISTIC_UUID = "abcdefab-1234-1234-1234-abcdefabcdef";
+    let bleCharacteristic;
+
+    async function connectBLE() {
+      try {
+        const device = await navigator.bluetooth.requestDevice({
+          filters: [{ namePrefix: 'ESP32' }],
+          optionalServices: [SERVICE_UUID]
+        });
+
+        const server = await device.gatt.connect();
+        const service = await server.getPrimaryService(SERVICE_UUID);
+        bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+
+        document.getElementById('status').textContent = "Connected to " + device.name;
+
+        bleCharacteristic.startNotifications();
+        bleCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
+      } catch (error) {
+        console.error(error);
+        document.getElementById('status').textContent = "Connection failed.";
+      }
+    }
+
+    function sendCommand(cmd) {
+      if (!bleCharacteristic) return;
+      const encoder = new TextEncoder();
+      bleCharacteristic.writeValue(encoder.encode(cmd));
+      console.log("Command sent:", cmd);
+    }
+
+    function handleNotifications(event) {
+      const decoder = new TextDecoder();
+      const value = decoder.decode(event.target.value);
+      console.log("Received:", value);
+      if (value.startsWith("ENC:")) {
+        const pos = value.split(":")[1];
+        document.getElementById("encoder").textContent = "Encoder: " + pos;
+      }
+    }
+  </script>
+</body>
+</html>
