@@ -1,0 +1,19 @@
+
+body {
+  font-family: sans-serif;
+  text-align: center;
+  padding: 2em;
+  background-color: #f4f4f4;
+}
+button {
+  padding: 1em;
+  margin: 1em;
+  font-size: 16px;
+}
+.controls {
+  margin-top: 2em;
+}
+#status, #encoder {
+  margin-top: 1em;
+  font-weight: bold;
+}
