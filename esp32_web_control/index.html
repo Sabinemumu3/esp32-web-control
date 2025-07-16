@@ -1,0 +1,24 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ESP32 BLE Control</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>ESP32 BLE Motor Control</h1>
+  <button id="connect">🔗 Connect to ESP32</button>
+  <div id="status">Status: Not connected</div>
+
+  <div class="controls">
+    <button onclick="sendCommand('START')">▶️ Start Motor</button>
+    <button onclick="sendCommand('STOP')">⏹ Stop Motor</button>
+  </div>
+
+  <div id="encoder">Encoder Position: --</div>
+
+  <script src="script.js"></script>
+</body>
+</html>
