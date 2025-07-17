@@ -1,40 +1,32 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Cubesat attitude BLE controller</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f8f9fa;
-    }
-    h1 {
-      color: #333;
-    }
-    button {
-      margin: 8px;
-      padding: 10px 20px;
-      font-size: 16px;
-    }
-    pre {
-      background: #eee;
-      padding: 10px;
-      border-radius: 6px;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>Cubesat Attitude BLE Controller</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div class="container">
+    <h1>Cubesat Attitude BLE Controller</h1>
 
-  <h1>Cubesat attitude BLE controller</h1>
+    <button id="connect">🔗 Connect BLE</button>
 
-  <button id="connect">🔗 Connect BLE</button>
-  <button id="start">▶️ START</button>
-  <button id="stop">⏸️ STOP</button>
-  <button id="reset">🔄 RESET ZERO</button>
+    <div id="status">Not connected</div>
 
-  <h3>Live Sensor Data</h3>
-  <pre id="ble-data">No data yet</pre>
+    <div class="data">
+      <p><strong>X:</strong> <span id="x">--</span></p>
+      <p><strong>Y:</strong> <span id="y">--</span></p>
+      <p><strong>Z:</strong> <span id="z">--</span></p>
+      <p><strong>Encoder:</strong> <span id="encoder">--</span></p>
+    </div>
+
+    <div class="buttons">
+      <button onclick="sendCommand('START')">🟢 Start</button>
+      <button onclick="sendCommand('STOP')">🔴 Stop</button>
+      <button onclick="sendCommand('RESET')">🔁 Reset</button>
+    </div>
+  </div>
 
   <script src="script.js"></script>
 </body>
