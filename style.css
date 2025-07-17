@@ -1,56 +1,40 @@
-let bleDevice = null;
-let bleServer = null;
-let bleService = null;
-let bleCharacteristic = null;
-
-const SERVICE_UUID = '12345678-1234-1234-1234-1234567890ab';
-const CHARACTERISTIC_UUID = 'abcdefab-1234-1234-1234-abcdefabcdef';
-
-document.getElementById('connect').addEventListener('click', async () => {
-  try {
-    bleDevice = await navigator.bluetooth.requestDevice({
-      filters: [{ name: 'ESP32C3-MotorBLE' }],
-      optionalServices: [SERVICE_UUID]
-    });
-
-    bleServer = await bleDevice.gatt.connect();
-    bleService = await bleServer.getPrimaryService(SERVICE_UUID);
-    bleCharacteristic = await bleService.getCharacteristic(CHARACTERISTIC_UUID);
-
-    document.getElementById('status').innerText = '✅ Connected to ESP32';
-
-    // 启用接收通知
-    await bleCharacteristic.startNotifications();
-    bleCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
-
-    console.log('🔗 Connected & Notifications started');
-  } catch (error) {
-    console.error('❌ Connection failed:', error);
-    document.getElementById('status').innerText = '❌ Connection failed';
-  }
-});
-
-function sendCommand(cmd) {
-  if (!bleCharacteristic) {
-    alert('Please connect to the BLE device first.');
-    return;
-  }
-  bleCharacteristic.writeValue(new TextEncoder().encode(cmd));
-  console.log('📤 Sent:', cmd);
+body {
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  margin: 0;
+  background-color: #f2f2f2;
 }
 
-function handleNotifications(event) {
-  const value = new TextDecoder().decode(event.target.value);
-  console.log('📥 Received:', value);
+h1 {
+  margin-bottom: 20px;
+  text-align: center;
+}
 
-  // 解析数据格式：X:0.45 Y:-0.20 Z:0.98 ENC:120
-  const xMatch = value.match(/X:([-.\d]+)/);
-  const yMatch = value.match(/Y:([-.\d]+)/);
-  const zMatch = value.match(/Z:([-.\d]+)/);
-  const encMatch = value.match(/ENC:(-?\d+)/);
+button {
+  padding: 10px 20px;
+  margin: 5px;
+  font-size: 18px;
+  border: none;
+  border-radius: 8px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+}
 
-  if (xMatch) document.getElementById('x').innerText = xMatch[1];
-  if (yMatch) document.getElementById('y').innerText = yMatch[1];
-  if (zMatch) document.getElementById('z').innerText = zMatch[1];
-  if (encMatch) document.getElementById('encoder').innerText = encMatch[1];
+button:hover {
+  background-color: #0056b3;
+}
+
+#data {
+  margin-top: 20px;
+  text-align: center;
+}
+
+#status {
+  font-weight: bold;
+  color: #333;
 }
