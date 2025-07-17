@@ -1,44 +1,58 @@
 body {
-  font-family: sans-serif;
-  background-color: #f0f0f0;
+  font-family: Arial, sans-serif;
+  background-color: #f1f1f1;
   display: flex;
   justify-content: center;
-  padding-top: 40px;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
 }
+
 .container {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  width: 400px;
+  background-color: #fff;
+  padding: 20px 30px;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   text-align: center;
+  width: 90%;
+  max-width: 400px;
 }
+
 h1 {
-  margin-bottom: 10px;
+  font-size: 1.5em;
+  margin-bottom: 20px;
 }
-#status {
-  font-weight: bold;
-  margin-bottom: 15px;
-  color: #333;
-}
+
 button {
-  margin: 5px 5px;
-  padding: 10px 15px;
-  font-size: 16px;
+  margin: 10px 5px;
+  padding: 12px 20px;
+  font-size: 1em;
   border: none;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
-  background-color: #1976d2;
+}
+
+#connect {
+  background-color: #007bff;
   color: white;
 }
-button:hover {
-  background-color: #125ea8;
+
+.buttons button:nth-child(1) {
+  background-color: #28a745;
+  color: white;
 }
-textarea, input {
-  width: 100%;
-  padding: 10px;
-  margin-top: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-family: monospace;
+
+.buttons button:nth-child(2) {
+  background-color: #dc3545;
+  color: white;
+}
+
+.buttons button:nth-child(3) {
+  background-color: #ffc107;
+  color: black;
+}
+
+.data p {
+  margin: 8px 0;
+  font-size: 1.1em;
 }
