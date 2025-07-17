@@ -1,33 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Cubesat Attitude BLE Controller</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container">
-    <h1>Cubesat Attitude BLE Controller</h1>
-
-    <button id="connect">🔗 Connect BLE</button>
-
-    <div id="status">Not connected</div>
-
-    <div class="data">
-      <p><strong>X:</strong> <span id="x">--</span></p>
-      <p><strong>Y:</strong> <span id="y">--</span></p>
-      <p><strong>Z:</strong> <span id="z">--</span></p>
-      <p><strong>Encoder:</strong> <span id="encoder">--</span></p>
-    </div>
-
-    <div class="buttons">
-      <button onclick="sendCommand('START')">🟢 Start</button>
-      <button onclick="sendCommand('STOP')">🔴 Stop</button>
-      <button onclick="sendCommand('RESET')">🔁 Reset</button>
-    </div>
+  <h1>Cubesat Attitude BLE Controller</h1>
+  <button id="connect">🔗 Connect</button>
+  <button id="start">▶️ Start</button>
+  <button id="stop">⏹️ Stop</button>
+  <div id="data">
+    <p id="status">Not Connected</p>
+    <p id="xyz">X: - | Y: - | Z: -</p>
+    <p id="encoder">Encoder: -</p>
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>
