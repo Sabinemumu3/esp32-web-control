@@ -1,87 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ESP32 BLE Motor Controller</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 30px;
-      background: #f4f4f4;
-    }
-    h2 { color: #333; }
-    button {
-      padding: 12px 20px;
-      margin: 10px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    #log {
-      background: #fff;
-      border: 1px solid #ccc;
-      padding: 15px;
-      margin-top: 20px;
-      height: 200px;
-      overflow-y: scroll;
-      white-space: pre-wrap;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP32C3 BLE Control</title>
 </head>
 <body>
-  <h2>🔗 ESP32 BLE Motor Control</h2>
-  <button onclick="connectBLE()">🔌 Connect Device</button>
-  <button onclick="sendCommand('START')">▶️ START</button>
-  <button onclick="sendCommand('STOP')">⏹ STOP</button>
-  <div id="log">[Waiting for BLE connection...]</div>
+  <h1>BLE Control Panel</h1>
+  <button id="connect">Connect to ESP32C3</button>
+  <div id="status">Status: Not connected</div>
+  <div>
+    <h3>Sensor Data</h3>
+    <p><strong>Encoder Position:</strong> <span id="encoderPos">N/A</span></p>
+    <p><strong>Accelerometer:</strong> <span id="accelData">N/A</span></p>
+  </div>
 
   <script>
     const SERVICE_UUID = "12345678-1234-1234-1234-1234567890ab";
     const CHARACTERISTIC_UUID = "abcdefab-1234-1234-1234-abcdefabcdef";
+    let characteristic;
 
-    let bleDevice;
-    let bleCharacteristic;
-
-    function log(text) {
-      const logEl = document.getElementById('log');
-      logEl.textContent += `\n${text}`;
-      logEl.scrollTop = logEl.scrollHeight;
-    }
-
-    async function connectBLE() {
+    document.getElementById("connect").addEventListener("click", async () => {
       try {
-        bleDevice = await navigator.bluetooth.requestDevice({
-          filters: [{ namePrefix: "ESP32C3" }],
+        const device = await navigator.bluetooth.requestDevice({
+          acceptAllDevices: true,
           optionalServices: [SERVICE_UUID]
         });
 
-        const server = await bleDevice.gatt.connect();
+        document.getElementById("status").textContent = `Status: Connecting to ${device.name}`;
+
+        const server = await device.gatt.connect();
         const service = await server.getPrimaryService(SERVICE_UUID);
-        bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+        characteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
 
-        await bleCharacteristic.startNotifications();
-        bleCharacteristic.addEventListener("characteristicvaluechanged", handleNotification);
+        await characteristic.startNotifications();
+        characteristic.addEventListener("characteristicvaluechanged", handleNotifications);
 
-        log("✅ Connected to: " + bleDevice.name);
+        document.getElementById("status").textContent = "Status: Connected and receiving data";
       } catch (error) {
-        log("❌ Connection failed: " + error);
+        console.error(error);
+        document.getElementById("status").textContent = `Status: Error - ${error.message}`;
       }
-    }
+    });
 
-    function sendCommand(cmd) {
-      if (!bleCharacteristic) {
-        log("⚠️ Not connected.");
-        return;
+    function handleNotifications(event) {
+      const value = new TextDecoder().decode(event.target.value);
+      console.log("Received:", value);
+
+      const parts = value.split(",");
+      if (parts.length === 2) {
+        document.getElementById("encoderPos").textContent = parts[0];
+        document.getElementById("accelData").textContent = parts[1];
+      } else {
+        document.getElementById("encoderPos").textContent = value;
       }
-      const encoder = new TextEncoder();
-      bleCharacteristic.writeValue(encoder.encode(cmd));
-      log("📤 Sent: " + cmd);
-    }
-
-    function handleNotification(event) {
-      const decoder = new TextDecoder("utf-8");
-      const value = decoder.decode(event.target.value);
-      log("📥 Received: " + value);
     }
   </script>
 </body>
