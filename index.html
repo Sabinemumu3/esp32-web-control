@@ -7,14 +7,18 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Cubesat Attitude BLE Controller</h1>
-  <button id="connect">🔗 Connect</button>
-  <button id="start">▶️ Start</button>
-  <button id="stop">⏹️ Stop</button>
-  <div id="data">
-    <p id="status">Not Connected</p>
-    <p id="xyz">X: - | Y: - | Z: -</p>
-    <p id="encoder">Encoder: -</p>
+  <div class="container">
+    <h1>Cubesat Attitude BLE Controller</h1>
+    <div class="buttons">
+      <button id="connect">🔗 Connect</button>
+      <button id="start">▶️ Start</button>
+      <button id="stop">⏹️ Stop</button>
+    </div>
+    <div id="data">
+      <p id="status">Not Connected</p>
+      <p id="xyz">X: - | Y: - | Z: -</p>
+      <p id="encoder">Encoder: -</p>
+    </div>
   </div>
   <script src="script.js"></script>
 </body>
