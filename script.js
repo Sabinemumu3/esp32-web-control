@@ -19,7 +19,6 @@ document.getElementById("connect").addEventListener("click", async () => {
 
     document.getElementById("status").textContent = "✅ Connected";
 
-    // 接收通知
     await bleCharacteristic.startNotifications();
     bleCharacteristic.addEventListener("characteristicvaluechanged", handleNotifications);
 
@@ -43,13 +42,11 @@ document.getElementById("stop").addEventListener("click", async () => {
   }
 });
 
-
 function handleNotifications(event) {
   const value = new TextDecoder().decode(event.target.value);
   console.log("Notification:", value);
 
-  // 示例数据格式: X:1.23 Y:4.56 Z:7.89 ENC:123
-  const match = value.match(/X:([-\d.]+)\s+Y:([-\d.]+)\s+Z:([-\d.]+)\s+ENC:(-?\d+)/i);
+  const match = value.match(/X:([\-\d.]+)\s+Y:([\-\d.]+)\s+Z:([\-\d.]+)\s+ENC:(-?\d+)/i);
   if (match) {
     document.getElementById("xyz").textContent =
       `X: ${match[1]} | Y: ${match[2]} | Z: ${match[3]}`;
