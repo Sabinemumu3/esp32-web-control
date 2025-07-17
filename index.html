@@ -3,16 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ESP32 BLE Control</title>
+  <title>ESP32 BLE Control Panel</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
-    <h1>ESP32 BLE Control</h1>
-    <button id="connect">🔗 Connect BLE</button>
-    <div id="status">Status: Not connected</div>
-    <textarea id="log" rows="10" placeholder="Incoming data..." readonly></textarea>
-    <input id="command" type="text" placeholder="Enter command..." />
+    <h1>ESP32 BLE Controller</h1>
+    <div id="status">🔌 Not connected</div>
+    <button id="connect">🔗 Connect</button>
+    <button id="start">▶️ Start</button>
+    <button id="stop">⏸️ Stop</button>
+    <button id="calibrate">🧭 Calibrate</button>
+    <textarea id="log" rows="12" readonly placeholder="Waiting for data..."></textarea>
+    <input id="command" type="text" placeholder="Type custom command..." />
     <button id="send">📤 Send</button>
   </div>
   <script src="script.js"></script>
