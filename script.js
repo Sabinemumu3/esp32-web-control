@@ -1,63 +1,49 @@
-let bleDevice = null;
-let bleServer = null;
-let bleService = null;
-let bleCharacteristic = null;
-
-const SERVICE_UUID = '12345678-1234-1234-1234-1234567890ab';
-const CHARACTERISTIC_UUID = 'abcdefab-1234-1234-1234-abcdefabcdef';
-
-document.getElementById("connect").addEventListener("click", async () => {
-  try {
-    bleDevice = await navigator.bluetooth.requestDevice({
-      filters: [{ namePrefix: 'ESP32C3' }],
-      optionalServices: [SERVICE_UUID]
-    });
-
-    bleServer = await bleDevice.gatt.connect();
-    bleService = await bleServer.getPrimaryService(SERVICE_UUID);
-    bleCharacteristic = await bleService.getCharacteristic(CHARACTERISTIC_UUID);
-
-    await bleCharacteristic.startNotifications();
-    bleCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
-
-    document.getElementById("status").textContent = "Status: Connected";
-
-    bleDevice.addEventListener("gattserverdisconnected", () => {
-      document.getElementById("status").textContent = "Status: Disconnected";
-    });
-
-  } catch (error) {
-    console.error("Connection failed", error);
-    document.getElementById("status").textContent = "Status: Connection failed";
-  }
-});
-
-function handleNotifications(event) {
-  const value = new TextDecoder().decode(event.target.value);
-  const parts = value.trim().split(',');
-
-  if (parts.length >= 2) {
-    document.getElementById("encoder").textContent = `Encoder Position: ${parts[0]}`;
-    document.getElementById("accel").textContent = `Accel: ${parts[1]}`;
-  } else {
-    document.getElementById("encoder").textContent = `Received: ${value}`;
-  }
+body {
+  font-family: sans-serif;
+  display: flex;
+  justify-content: center;
+  padding-top: 50px;
+  background-color: #f5f5f5;
 }
-
-document.getElementById("forward").addEventListener("click", () => {
-  sendCommand("START");
-});
-
-document.getElementById("backward").addEventListener("click", () => {
-  sendCommand("STOP");
-});
-
-function sendCommand(cmd) {
-  if (!bleCharacteristic) {
-    alert("Not connected");
-    return;
-  }
-
-  bleCharacteristic.writeValue(new TextEncoder().encode(cmd))
-    .catch(err => console.error("Write failed", err));
+.container {
+  background: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  width: 400px;
+  text-align: center;
+}
+h1 {
+  margin-bottom: 20px;
+}
+button {
+  padding: 10px 20px;
+  margin: 10px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: #1976d2;
+  color: white;
+  cursor: pointer;
+}
+button:hover {
+  background-color: #1565c0;
+}
+textarea {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+input {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+#status {
+  margin-top: 10px;
+  font-weight: bold;
 }
