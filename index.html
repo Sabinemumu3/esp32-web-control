@@ -1,94 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ESP32 BLE Motor Controller</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-    }
-    button {
-      padding: 10px 20px;
-      margin: 10px 5px;
-      font-size: 16px;
-    }
-    #status {
-      margin-bottom: 20px;
-      font-weight: bold;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>ESP32 BLE Control</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2 id="status">Status: Not Connected</h2>
-  <button id="connect">🔗 Connect to ESP32</button>
-  <hr>
-  <p id="encoder">Encoder Position: N/A</p>
-  <p id="accel">Accel: N/A</p>
-  <button id="forward">⬆️ Forward</button>
-  <button id="backward">⬇️ Backward</button>
+  <div class="container">
+    <h1>ESP32 BLE Controller</h1>
+    <div id="status">Status: Not connected</div>
 
-  <script>
-    let bleDevice = null;
-    let bleServer = null;
-    let bleService = null;
-    let bleCharacteristic = null;
+    <button id="connect">🔗 Connect BLE</button>
 
-    // Use your actual UUIDs here
-    const SERVICE_UUID = '12345678-1234-1234-1234-1234567890ab';
-    const CHARACTERISTIC_UUID = 'abcdefab-1234-1234-1234-abcdefabcdef';
+    <div class="data">
+      <p id="encoder">Encoder Position: N/A</p>
+      <p id="accel">Accel: N/A</p>
+    </div>
 
-    document.getElementById("connect").addEventListener("click", async () => {
-      try {
-        bleDevice = await navigator.bluetooth.requestDevice({
-          filters: [{ name: 'ESP32C3-MotorBLE' }],
-          optionalServices: [SERVICE_UUID]
-        });
+    <div class="buttons">
+      <button id="forward">⬆️ Start</button>
+      <button id="backward">⏹️ Stop</button>
+    </div>
+  </div>
 
-        bleServer = await bleDevice.gatt.connect();
-        bleService = await bleServer.getPrimaryService(SERVICE_UUID);
-        bleCharacteristic = await bleService.getCharacteristic(CHARACTERISTIC_UUID);
-
-        await bleCharacteristic.startNotifications();
-        bleCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
-
-        document.getElementById("status").textContent = "✅ Connected to ESP32C3-MotorBLE";
-      } catch (error) {
-        console.error("❌ Connection failed", error);
-        document.getElementById("status").textContent = "❌ Connection failed";
-      }
-    });
-
-    function handleNotifications(event) {
-      const value = new TextDecoder().decode(event.target.value);
-      const parts = value.trim().split(',');
-
-      if (parts.length >= 2) {
-        document.getElementById("encoder").textContent = `Encoder Position: ${parts[0]}`;
-        document.getElementById("accel").textContent = `Accel: ${parts[1]}`;
-      } else {
-        document.getElementById("encoder").textContent = `Received: ${value}`;
-      }
-    }
-
-    document.getElementById("forward").addEventListener("click", () => {
-      sendCommand("F");
-    });
-
-    document.getElementById("backward").addEventListener("click", () => {
-      sendCommand("B");
-    });
-
-    function sendCommand(cmd) {
-      if (!bleCharacteristic) {
-        alert("❗ Not connected to ESP32");
-        return;
-      }
-
-      bleCharacteristic.writeValue(new TextEncoder().encode(cmd))
-        .catch(err => console.error("Write failed", err));
-    }
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
