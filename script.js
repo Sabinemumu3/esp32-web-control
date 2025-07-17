@@ -3,14 +3,13 @@ let bleServer = null;
 let bleService = null;
 let bleCharacteristic = null;
 
-// 替换为你的实际 UUID
 const SERVICE_UUID = '12345678-1234-1234-1234-1234567890ab';
 const CHARACTERISTIC_UUID = 'abcdefab-1234-1234-1234-abcdefabcdef';
 
 document.getElementById("connect").addEventListener("click", async () => {
   try {
     bleDevice = await navigator.bluetooth.requestDevice({
-      filters: [{ name: 'ESP32C3-MotorBLE' }],
+      filters: [{ namePrefix: 'ESP32C3' }],
       optionalServices: [SERVICE_UUID]
     });
 
@@ -22,6 +21,11 @@ document.getElementById("connect").addEventListener("click", async () => {
     bleCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
 
     document.getElementById("status").textContent = "Status: Connected";
+
+    bleDevice.addEventListener("gattserverdisconnected", () => {
+      document.getElementById("status").textContent = "Status: Disconnected";
+    });
+
   } catch (error) {
     console.error("Connection failed", error);
     document.getElementById("status").textContent = "Status: Connection failed";
@@ -41,11 +45,11 @@ function handleNotifications(event) {
 }
 
 document.getElementById("forward").addEventListener("click", () => {
-  sendCommand("F");
+  sendCommand("START");
 });
 
 document.getElementById("backward").addEventListener("click", () => {
-  sendCommand("B");
+  sendCommand("STOP");
 });
 
 function sendCommand(cmd) {
