@@ -1,4 +1,3 @@
-
 let bleServer = null;
 let bleCharacteristic = null;
 
@@ -9,13 +8,20 @@ document.getElementById("connect").addEventListener("click", async () => {
       optionalServices: ["12345678-1234-1234-1234-1234567890ab"]
     });
 
+    device.addEventListener("gattserverdisconnected", () => {
+      document.getElementById("status").innerText = "Status: Disconnected";
+      alert("⚠️ BLE device disconnected");
+    });
+
     bleServer = await device.gatt.connect();
     const service = await bleServer.getPrimaryService("12345678-1234-1234-1234-1234567890ab");
     bleCharacteristic = await service.getCharacteristic("abcdefab-1234-1234-1234-abcdefabcdef");
 
     document.getElementById("status").innerText = "Status: Connected";
+    document.getElementById("btnStart").disabled = false;
+    document.getElementById("btnStop").disabled = false;
 
-    bleCharacteristic.startNotifications();
+    await bleCharacteristic.startNotifications();
     bleCharacteristic.addEventListener("characteristicvaluechanged", event => {
       const value = new TextDecoder().decode(event.target.value);
       document.getElementById("encoder").innerText = "Encoder Position: " + value;
