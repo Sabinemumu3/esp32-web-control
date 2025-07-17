@@ -32,16 +32,17 @@ document.getElementById("connect").addEventListener("click", async () => {
 document.getElementById("start").addEventListener("click", async () => {
   if (bleCharacteristic) {
     await bleCharacteristic.writeValue(new TextEncoder().encode("START"));
-    console.log("Sent: START");
+    console.log("Sent START command");
   }
 });
 
 document.getElementById("stop").addEventListener("click", async () => {
   if (bleCharacteristic) {
     await bleCharacteristic.writeValue(new TextEncoder().encode("STOP"));
-    console.log("Sent: STOP");
+    console.log("Sent STOP command");
   }
 });
+
 
 function handleNotifications(event) {
   const value = new TextDecoder().decode(event.target.value);
