@@ -1,28 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ESP32 BLE Control</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="container">
-    <h1>ESP32 BLE Controller</h1>
-    <div id="status">Status: Not connected</div>
-
+    <h1>ESP32 BLE Control</h1>
     <button id="connect">🔗 Connect BLE</button>
-
-    <div class="data">
-      <p id="encoder">Encoder Position: N/A</p>
-      <p id="accel">Accel: N/A</p>
-    </div>
-
-    <div class="buttons">
-      <button id="forward">⬆️ Start</button>
-      <button id="backward">⏹️ Stop</button>
-    </div>
+    <div id="status">Status: Not connected</div>
+    <textarea id="log" rows="10" placeholder="Incoming data..." readonly></textarea>
+    <input id="command" type="text" placeholder="Enter command..." />
+    <button id="send">📤 Send</button>
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>
