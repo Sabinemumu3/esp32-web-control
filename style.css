@@ -1,58 +1,56 @@
-body {
-  font-family: Arial, sans-serif;
-  background-color: #f1f1f1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  margin: 0;
+let bleDevice = null;
+let bleServer = null;
+let bleService = null;
+let bleCharacteristic = null;
+
+const SERVICE_UUID = '12345678-1234-1234-1234-1234567890ab';
+const CHARACTERISTIC_UUID = 'abcdefab-1234-1234-1234-abcdefabcdef';
+
+document.getElementById('connect').addEventListener('click', async () => {
+  try {
+    bleDevice = await navigator.bluetooth.requestDevice({
+      filters: [{ name: 'ESP32C3-MotorBLE' }],
+      optionalServices: [SERVICE_UUID]
+    });
+
+    bleServer = await bleDevice.gatt.connect();
+    bleService = await bleServer.getPrimaryService(SERVICE_UUID);
+    bleCharacteristic = await bleService.getCharacteristic(CHARACTERISTIC_UUID);
+
+    document.getElementById('status').innerText = '✅ Connected to ESP32';
+
+    // 启用接收通知
+    await bleCharacteristic.startNotifications();
+    bleCharacteristic.addEventListener('characteristicvaluechanged', handleNotifications);
+
+    console.log('🔗 Connected & Notifications started');
+  } catch (error) {
+    console.error('❌ Connection failed:', error);
+    document.getElementById('status').innerText = '❌ Connection failed';
+  }
+});
+
+function sendCommand(cmd) {
+  if (!bleCharacteristic) {
+    alert('Please connect to the BLE device first.');
+    return;
+  }
+  bleCharacteristic.writeValue(new TextEncoder().encode(cmd));
+  console.log('📤 Sent:', cmd);
 }
 
-.container {
-  background-color: #fff;
-  padding: 20px 30px;
-  border-radius: 15px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  text-align: center;
-  width: 90%;
-  max-width: 400px;
-}
+function handleNotifications(event) {
+  const value = new TextDecoder().decode(event.target.value);
+  console.log('📥 Received:', value);
 
-h1 {
-  font-size: 1.5em;
-  margin-bottom: 20px;
-}
+  // 解析数据格式：X:0.45 Y:-0.20 Z:0.98 ENC:120
+  const xMatch = value.match(/X:([-.\d]+)/);
+  const yMatch = value.match(/Y:([-.\d]+)/);
+  const zMatch = value.match(/Z:([-.\d]+)/);
+  const encMatch = value.match(/ENC:(-?\d+)/);
 
-button {
-  margin: 10px 5px;
-  padding: 12px 20px;
-  font-size: 1em;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-#connect {
-  background-color: #007bff;
-  color: white;
-}
-
-.buttons button:nth-child(1) {
-  background-color: #28a745;
-  color: white;
-}
-
-.buttons button:nth-child(2) {
-  background-color: #dc3545;
-  color: white;
-}
-
-.buttons button:nth-child(3) {
-  background-color: #ffc107;
-  color: black;
-}
-
-.data p {
-  margin: 8px 0;
-  font-size: 1.1em;
+  if (xMatch) document.getElementById('x').innerText = xMatch[1];
+  if (yMatch) document.getElementById('y').innerText = yMatch[1];
+  if (zMatch) document.getElementById('z').innerText = zMatch[1];
+  if (encMatch) document.getElementById('encoder').innerText = encMatch[1];
 }
