@@ -1,0 +1,220 @@
+#include <Wire.h>
+#include <SparkFun_MMA8452Q.h>
+#include <Stepper.h>
+#include <NimBLEDevice.h>
+
+// 步进电机参数
+const int stepsPerRevolution = 2038;
+Stepper myStepper(stepsPerRevolution, 4, 2, 5, 3);
+
+// 加速度计
+MMA8452Q accel;
+
+// 编码器引脚与变量
+const int encoderCLK = 18;
+const int encoderDT  = 19;
+volatile int encoderPos = 0;
+int lastCLK = 0;
+
+// BLE UUID
+#define SERVICE_UUID        "12345678-1234-1234-1234-1234567890ab"
+#define CHARACTERISTIC_UUID "abcdefab-1234-1234-1234-abcdefabcdef"
+
+NimBLECharacteristic* pCharacteristic;
+bool motorEnabled = false;
+bool clientConnected = false;
+bool systemEnabled = false;
+
+// 编码器中断处理
+
+
+
+// 接收 BLE 数据处理
+class DataReceiveCallback : public NimBLECharacteristicCallbacks {
+  void onWrite(NimBLECharacteristic* pChar) {
+    std::string val = pChar->getValue();
+    String cmd = String(val.c_str());
+    cmd.trim(); cmd.toUpperCase();
+
+    Serial.print("📩 BLE Command Received: ");
+    Serial.println(cmd);
+
+    if (cmd == "START") {
+      systemEnabled = true;
+      motorEnabled = true;
+      Serial.println("✅ System + Motor ENABLED");
+    } else if (cmd == "STOP") {
+      systemEnabled = false;
+      motorEnabled = false;
+      Serial.println("🛑 System + Motor DISABLED");
+    }
+  }
+};
+
+// BLE 连接状态回调
+class ServerCallbacks : public NimBLEServerCallbacks {
+  void onConnect(NimBLEServer* pServer) {
+    Serial.println("✅ BLE client connected");
+    clientConnected = true;
+  }
+  void onDisconnect(NimBLEServer* pServer) {
+    Serial.println("❌ BLE client disconnected");
+    clientConnected = false;
+    NimBLEDevice::startAdvertising();
+  }
+};
+
+void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println("🔧 System Starting...");
+
+  // 初始化加速度计
+  Wire.begin(6, 7);  // SDA=6, SCL=7
+  if (!accel.begin()) {
+    Serial.println("❌ MMA8452Q not detected");
+    while (1);
+  }
+  accel.setScale(SCALE_2G);
+  accel.setDataRate(ODR_100);
+  Serial.println("✅ MMA8452Q initialized");
+
+  // 初始化步进电机
+  myStepper.setSpeed(100);
+
+  // 初始化编码器
+  pinMode(encoderCLK, INPUT_PULLUP);
+  pinMode(encoderDT, INPUT_PULLUP);
+  lastCLK = digitalRead(encoderCLK);
+  Serial.println("✅ Encoder initialized");
+
+  // 初始化 BLE
+  NimBLEDevice::init("ESP32C3-MotorBLE");  // ✅ 设置设备名称
+  NimBLEServer* pServer = NimBLEDevice::createServer();
+  pServer->setCallbacks(new ServerCallbacks());
+
+  NimBLEService* pService = pServer->createService(SERVICE_UUID);
+  pCharacteristic = pService->createCharacteristic(
+  CHARACTERISTIC_UUID,
+  NIMBLE_PROPERTY::WRITE |
+  NIMBLE_PROPERTY::WRITE_NR |
+  NIMBLE_PROPERTY::READ |
+  NIMBLE_PROPERTY::NOTIFY
+  );
+  pCharacteristic->setCallbacks(new DataReceiveCallback());
+  pCharacteristic->setValue("READY");
+  pService->start();
+
+  // 设置 BLE 广播并添加设备名作为 scan response
+  NimBLEAdvertising* pAdv = NimBLEDevice::getAdvertising();
+  pAdv->addServiceUUID(SERVICE_UUID);
+  pAdv->setAppearance(0x00);
+
+NimBLEAdvertisementData scanResponseData;
+scanResponseData.setName("ESP32C3-MotorBLE");
+pAdv->setScanResponseData(scanResponseData);
+pAdv->enableScanResponse(true);
+
+  pAdv->start();
+  Serial.println("📡 BLE advertising started");
+  Serial.flush();
+
+}
+
+void loop() {
+  static float lastX = 0, lastY = 0, lastZ = 0;
+  static int lastEncoder = 0;
+  static unsigned long lastLoopTime = 0;
+  static unsigned long lastNotifyTime = 0;
+  const unsigned long notifyInterval = 1000; // 最快每秒通知一次 BLE
+  const unsigned long loopInterval = 500;    // 每 500ms 执行一次判断逻辑
+
+  // ⌨️ Serial 命令输入
+  if (Serial.available()) {
+    String cmd = Serial.readStringUntil('\n');
+    cmd.trim(); cmd.toUpperCase();
+
+    Serial.print("🧪 Serial Command: ");
+    Serial.println(cmd);
+
+    if (cmd == "START") {
+      systemEnabled = true;
+      motorEnabled = true;
+      Serial.println("✅ System + Motor ENABLED via Serial");
+    } else if (cmd == "STOP") {
+      systemEnabled = false;
+      motorEnabled = false;
+      Serial.println("🛑 System + Motor DISABLED via Serial");
+    }
+  }
+
+  if (!systemEnabled) return;
+
+  // === 编码器轮询读取 ===
+  int clkState = digitalRead(encoderCLK);
+  int dtState  = digitalRead(encoderDT);
+  if (clkState != lastCLK) {
+    if (dtState != clkState) encoderPos++;
+    else encoderPos--;
+    lastCLK = clkState;
+  }
+
+  unsigned long currentTime = millis();
+  if (currentTime - lastLoopTime < loopInterval) return;
+  lastLoopTime = currentTime;
+
+  // 🧭 加速度计读取
+  accel.read();
+  float x = accel.x;
+  float y = accel.y;
+  float z = accel.z;
+
+  // 🔁 读取编码器当前值
+  int currentEncoder = encoderPos;
+
+  // 是否有变化
+  bool orientationChanged = abs(x - lastX) > 0.2 ||
+                            abs(y - lastY) > 0.2 ||
+                            abs(z - lastZ) > 0.2;
+  bool encoderChanged = (currentEncoder != lastEncoder);
+
+  if ((orientationChanged || encoderChanged) &&
+      (currentTime - lastNotifyTime > notifyInterval)) {
+
+    lastX = x;
+    lastY = y;
+    lastZ = z;
+    lastEncoder = currentEncoder;
+    lastNotifyTime = currentTime;
+
+    Serial.print("Accel -> X: ");
+    Serial.print(x);
+    Serial.print(" | Y: ");
+    Serial.print(y);
+    Serial.print(" | Z: ");
+    Serial.print(z);
+    Serial.print(" || Encoder: ");
+    Serial.println(currentEncoder);
+
+    // BLE 通知发送
+    if (clientConnected) {
+      String payload = "X:" + String(x, 2) +
+                       " Y:" + String(y, 2) +
+                       " Z:" + String(z, 2) +
+                       " ENC:" + String(currentEncoder);
+      pCharacteristic->setValue(payload.c_str());
+      pCharacteristic->notify();
+    }
+
+    // 电机控制逻辑
+    if (motorEnabled) {
+      if (x > 0.5) {
+        myStepper.step(50);
+        Serial.println("↻ CW step");
+      } else if (x < -0.5) {
+        myStepper.step(-50);
+        Serial.println("↺ CCW step");
+      }
+    }
+  }
+}
