@@ -1,53 +1,48 @@
-let bleDevice;
-let bleCharacteristic;
+let bleDevice = null;
+let bleServer = null;
+let bleService = null;
+let bleCharacteristic = null;
 
 const SERVICE_UUID = '12345678-1234-1234-1234-1234567890ab';
 const CHARACTERISTIC_UUID = 'abcdefab-1234-1234-1234-abcdefabcdef';
 
-document.getElementById("connect").addEventListener("click", async () => {
+async function connectBLE() {
   try {
     bleDevice = await navigator.bluetooth.requestDevice({
       filters: [{ name: 'ESP32C3-MotorBLE' }],
       optionalServices: [SERVICE_UUID]
     });
 
-    const server = await bleDevice.gatt.connect();
-    const service = await server.getPrimaryService(SERVICE_UUID);
-    bleCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
+    bleServer = await bleDevice.gatt.connect();
+    bleService = await bleServer.getPrimaryService(SERVICE_UUID);
+    bleCharacteristic = await bleService.getCharacteristic(CHARACTERISTIC_UUID);
 
     await bleCharacteristic.startNotifications();
-    bleCharacteristic.addEventListener("characteristicvaluechanged", handleNotifications);
+    bleCharacteristic.addEventListener("characteristicvaluechanged", handleNotify);
 
-    document.getElementById("status").textContent = "✅ Connected to ESP32C3-MotorBLE";
+    document.getElementById("status").innerText = "✅ Connected";
   } catch (error) {
-    console.error("❌ Connection failed:", error);
-    document.getElementById("status").textContent = "❌ Connection failed";
-  }
-});
-
-document.getElementById("start").addEventListener("click", () => {
-  if (bleCharacteristic) {
-    bleCharacteristic.writeValue(new TextEncoder().encode("START"));
-  }
-});
-
-document.getElementById("stop").addEventListener("click", () => {
-  if (bleCharacteristic) {
-    bleCharacteristic.writeValue(new TextEncoder().encode("STOP"));
-  }
-});
-
-function handleNotifications(event) {
-  const value = new TextDecoder().decode(event.target.value);
-  console.log("📡 Received:", value);
-  document.getElementById("status").textContent = "📡 Receiving Data...";
-  if (value.includes("X:") && value.includes("ENC:")) {
-    const parts = value.split(" ");
-    const x = parts.find(p => p.startsWith("X:")) || "X:-";
-    const y = parts.find(p => p.startsWith("Y:")) || "Y:-";
-    const z = parts.find(p => p.startsWith("Z:")) || "Z:-";
-    const enc = parts.find(p => p.startsWith("ENC:")) || "ENC:-";
-    document.getElementById("xyz").textContent = `${x} | ${y} | ${z}`;
-    document.getElementById("encoder").textContent = `${enc}`;
+    console.error("Connection failed", error);
+    document.getElementById("status").innerText = "❌ Connection failed";
   }
 }
+
+function handleNotify(event) {
+  const value = new TextDecoder().decode(event.target.value);
+  document.getElementById("data").innerText = value;
+}
+
+async function sendCommand(cmd) {
+  if (!bleCharacteristic) return;
+  try {
+    const encoder = new TextEncoder();
+    await bleCharacteristic.writeValue(encoder.encode(cmd));
+    console.log("Command sent:", cmd);
+  } catch (err) {
+    console.error("Write failed:", err);
+  }
+}
+
+document.getElementById("connectBtn").addEventListener("click", connectBLE);
+document.getElementById("startBtn").addEventListener("click", () => sendCommand("START"));
+document.getElementById("stopBtn").addEventListener("click", () => sendCommand("STOP"));
