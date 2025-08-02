@@ -1,37 +1,36 @@
 let bleDevice, bleServer, bleService, bleCharacteristic;
 
-const SERVICE_UUID = '12345678-1234-1234-1234-1234567890ab';
-const CHARACTERISTIC_UUID = 'abcdefab-1234-1234-1234-abcdefabcdef';
+const SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb';
+const CHARACTERISTIC_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb';
 
-document.getElementById("connect").addEventListener("click", async () => {
+document.getElementById("connect").onclick = async () => {
   try {
-    document.getElementById("status").textContent = "🔍 Scanning for BLE devices...";
     bleDevice = await navigator.bluetooth.requestDevice({
-      filters: [{ name: "Makerobo" }],
+      filters: [{ namePrefix: 'Makerobo' }],
       optionalServices: [SERVICE_UUID]
     });
 
     bleServer = await bleDevice.gatt.connect();
     bleService = await bleServer.getPrimaryService(SERVICE_UUID);
     bleCharacteristic = await bleService.getCharacteristic(CHARACTERISTIC_UUID);
-
-    document.getElementById("status").textContent = `✅ Connected to ${bleDevice.name}`;
+    alert("✅ Connected to Makerobo BLE!");
   } catch (error) {
     console.error(error);
-    document.getElementById("status").textContent = "❌ Connection failed";
+    alert("❌ Failed to connect.");
   }
-});
+};
 
-function sendCommand(cmd) {
+const sendCommand = async (cmd) => {
   if (!bleCharacteristic) {
-    alert("Please connect to a BLE device first.");
+    alert("Please connect first.");
     return;
   }
+  const data = new TextEncoder().encode(cmd);
+  await bleCharacteristic.writeValue(data);
+};
 
-  const encoder = new TextEncoder();
-  bleCharacteristic.writeValue(encoder.encode(cmd)).then(() => {
-    console.log(`Command sent: ${cmd}`);
-  }).catch(error => {
-    console.error("Failed to write command:", error);
-  });
-}
+document.getElementById("up").onclick = () => sendCommand("A");
+document.getElementById("down").onclick = () => sendCommand("B");
+document.getElementById("left").onclick = () => sendCommand("C");
+document.getElementById("right").onclick = () => sendCommand("D");
+document.getElementById("stop").onclick = () => sendCommand("F");
