@@ -1,12 +1,13 @@
 let bleDevice, bleServer, bleService, bleCharacteristic;
 
-const SERVICE_UUID = "12345678-1234-1234-1234-1234567890ab";
-const CHARACTERISTIC_UUID = "abcdefab-1234-1234-1234-abcdefabcdef";
+const SERVICE_UUID = '12345678-1234-1234-1234-1234567890ab';
+const CHARACTERISTIC_UUID = 'abcdefab-1234-1234-1234-abcdefabcdef';
 
 document.getElementById("connect").addEventListener("click", async () => {
   try {
+    document.getElementById("status").textContent = "🔍 Scanning for BLE devices...";
     bleDevice = await navigator.bluetooth.requestDevice({
-      filters: [{ name: "ESP32C3-MotorBLE" }],
+      filters: [{ name: "Makerobo" }],
       optionalServices: [SERVICE_UUID]
     });
 
@@ -14,26 +15,23 @@ document.getElementById("connect").addEventListener("click", async () => {
     bleService = await bleServer.getPrimaryService(SERVICE_UUID);
     bleCharacteristic = await bleService.getCharacteristic(CHARACTERISTIC_UUID);
 
-    document.getElementById("status").textContent = "✅ Connected to ESP32";
+    document.getElementById("status").textContent = `✅ Connected to ${bleDevice.name}`;
   } catch (error) {
-    console.error("Connection failed", error);
-    document.getElementById("status").textContent = "❌ Failed to connect";
+    console.error(error);
+    document.getElementById("status").textContent = "❌ Connection failed";
   }
 });
 
-async function sendCommand(cmd) {
+function sendCommand(cmd) {
   if (!bleCharacteristic) {
-    alert("Please connect to ESP32 first.");
+    alert("Please connect to a BLE device first.");
     return;
   }
 
-  try {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(cmd); // e.g., "ONu"
-    await bleCharacteristic.writeValue(data);
-    document.getElementById("status").textContent = `📤 Sent command: ${cmd}`;
-  } catch (error) {
-    console.error("Send failed", error);
-    document.getElementById("status").textContent = "❌ Send failed";
-  }
+  const encoder = new TextEncoder();
+  bleCharacteristic.writeValue(encoder.encode(cmd)).then(() => {
+    console.log(`Command sent: ${cmd}`);
+  }).catch(error => {
+    console.error("Failed to write command:", error);
+  });
 }
