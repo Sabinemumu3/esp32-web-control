@@ -2,25 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ESP32 BLE Car Controller</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLE Car Controller</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>🚗 ESP32 BLE Car Control</h1>
-  <button id="connect">🔗 Connect to ESP32</button>
+  <h1>🚗 BLE Car Controller</h1>
+  <button id="connect">🔗 Connect to BLE</button>
+  <div id="status">Not connected</div>
 
-  <div class="controller">
-    <button onclick="sendCommand('ONu')">⬆️</button>
-    <div>
-      <button onclick="sendCommand('ONl')">⬅️</button>
-      <button onclick="sendCommand('ONs')">⏹️</button>
-      <button onclick="sendCommand('ONr')">➡️</button>
-    </div>
+  <div id="controls">
+    <button onclick="sendCommand('ONu')">⬆️</button><br>
+    <button onclick="sendCommand('ONl')">⬅️</button>
+    <button onclick="sendCommand('ONs')">⏹️</button>
+    <button onclick="sendCommand('ONr')">➡️</button><br>
     <button onclick="sendCommand('ONd')">⬇️</button>
   </div>
-
-  <p id="status">Not connected</p>
 
   <script src="script.js"></script>
 </body>
