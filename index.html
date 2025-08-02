@@ -2,20 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>BLE Car Controller</title>
-  <link rel="stylesheet" href="style.css">
+  <title>BLE Motor Control</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial;
+    }
+    button {
+      font-size: 32px;
+      margin: 10px;
+      padding: 15px 25px;
+    }
+  </style>
 </head>
 <body>
-  <h1>🚗 BLE Car Controller</h1>
-  <button id="connect">🔗 Connect to BLE</button>
-  <div id="status">Not connected</div>
+  <h2>🚗 BLE Motor Control</h2>
+  <button id="connect">🔗 Connect</button><br><br>
 
-  <div id="controls">
-    <button onclick="sendCommand('ONu')">⬆️</button><br>
-    <button onclick="sendCommand('ONl')">⬅️</button>
-    <button onclick="sendCommand('ONs')">⏹️</button>
-    <button onclick="sendCommand('ONr')">➡️</button><br>
-    <button onclick="sendCommand('ONd')">⬇️</button>
+  <div>
+    <button id="up">⬆️</button><br>
+    <button id="left">⬅️</button>
+    <button id="stop">🟥</button>
+    <button id="right">➡️</button><br>
+    <button id="down">⬇️</button>
   </div>
 
   <script src="script.js"></script>
