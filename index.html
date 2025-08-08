@@ -1,34 +1,249 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>ESP32C3 BLE Control</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <title>CubeSat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a84ff" />
+  <style>
+    :root{
+      --bg:#0b0f14;
+      --card:#101720;
+      --muted:#7d8a99;
+      --text:#e8edf2;
+      --accent:#0a84ff;
+      --accent-2:#29d398;
+      --danger:#ff4d6d;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:18px;
+    }
+    @media (prefers-color-scheme: light){
+      :root{
+        --bg:#f6f8fb; --card:#ffffff; --muted:#546175; --text:#111827;
+        --accent:#0a84ff; --accent-2:#1aae6a; --danger:#e11d48;
+        --shadow: 0 10px 30px rgba(16,23,32,.08);
+      }
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; padding:16px 16px 96px;
+      background:var(--bg); color:var(--text);
+      font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial;
+      -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    }
+
+    header{
+      position:sticky; top:0; z-index:10;
+      padding:10px 0 18px; background:linear-gradient(180deg,var(--bg),transparent);
+      backdrop-filter:saturate(140%) blur(6px);
+    }
+    .title{
+      display:flex; align-items:center; gap:10px; margin:0;
+      font-size:22px; letter-spacing:.2px;
+    }
+    .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 16px var(--accent)}
+    .subtitle{margin:4px 0 0; color:var(--muted); font-size:13px}
+
+    .grid{display:grid; gap:14px; grid-template-columns:1fr}
+    @media (min-width:520px){ .grid{grid-template-columns:1fr 1fr} }
+
+    .card{
+      background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:16px; position:relative; overflow:hidden;
+    }
+    .card h3{margin:0 0 10px; font-size:16px}
+    .status-pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 12px; border-radius:14px; background:rgba(255,255,255,.04);
+      color:var(--muted); font-weight:600;
+    }
+    .status-dot{
+      width:10px;height:10px;border-radius:50%; background:#c4cbd6; box-shadow:0 0 0 2px rgba(0,0,0,.06) inset;
+    }
+    .status--ok{ color:var(--accent-2) }
+    .status--ok .status-dot{ background:var(--accent-2) }
+    .status--bad{ color:var(--danger) }
+    .status--bad .status-dot{ background:var(--danger) }
+
+    .controls{display:flex; gap:12px; flex-wrap:wrap; margin-top:12px}
+    button{
+      -webkit-tap-highlight-color:transparent;
+      border:none; outline:none; cursor:pointer;
+      background:var(--accent); color:white; font-weight:700;
+      padding:14px 16px; border-radius:14px; flex:1 1 auto; min-width:120px;
+      box-shadow:0 8px 20px rgba(10,132,255,.25); transition:transform .05s ease, opacity .2s ease;
+    }
+    button:active{ transform:translateY(1px) }
+    .btn-secondary{ background:#232b36; color:#d6dde6; box-shadow:none }
+    .btn-danger{ background:var(--danger) }
+
+    .reading{
+      display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px
+    }
+    .chip{
+      background:rgba(255,255,255,.04); border-radius:12px; padding:10px 12px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; 
+      display:flex; align-items:center; justify-content:space-between
+    }
+    .mono{ font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .muted{ color:var(--muted) }
+
+    .log{
+      height:220px; overflow:auto; border-radius:12px; padding:10px;
+      background:rgba(255,255,255,.03); font-size:13px
+    }
+    .log p{ margin:6px 0 }
+    .footer{
+      position:fixed; left:0; right:0; bottom:0; padding:10px 16px 20px; background:linear-gradient(180deg,transparent,rgba(0,0,0,.35));
+      display:flex; gap:10px; justify-content:center
+    }
+    .hint{font-size:12px; color:var(--muted); margin-top:10px}
+  </style>
 </head>
 <body>
-  <h1>ESP32-C3 BLE Dashboard</h1>
+  <header>
+    <h1 class="title"><span class="dot"></span> CubeSat</h1>
+    <p class="subtitle">BLE dashboard for motor & sensors — mobile-first UI</p>
+  </header>
 
-  <div class="status-box">
-    <strong>Status:</strong> <span id="status">🔌 Not Connected</span>
+  <section class="grid">
+    <!-- Connection & Controls -->
+    <div class="card">
+      <h3>Connection</h3>
+      <div class="status-pill" id="status-pill" aria-live="polite">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status">🔌 Not Connected</span>
+      </div>
+
+      <div class="controls" style="margin-top:16px;">
+        <button id="connect">🔗 Connect</button>
+        <button id="start" class="btn-secondary">▶️ Start</button>
+        <button id="stop" class="btn-danger">⏹ Stop</button>
+      </div>
+
+      <p class="hint">Tip: Use Chrome/Edge on Android, served over HTTPS for Web Bluetooth.</p>
+    </div>
+
+    <!-- Live Readouts -->
+    <div class="card">
+      <h3>Live Readout</h3>
+      <div class="chip"><span class="muted">Accelerometer</span><span id="xyz" class="mono">X: -- | Y: -- | Z: --</span></div>
+      <div class="chip"><span class="muted">Encoder</span><span id="encoder" class="mono">--</span></div>
+      <div class="reading">
+        <div class="chip"><span class="muted">BLE Name</span><span class="mono">ESP32C3-MotorBLE</span></div>
+        <div class="chip"><span class="muted">Notify</span><span class="mono">1s (on change)</span></div>
+      </div>
+    </div>
+
+    <!-- Logs -->
+    <div class="card" style="grid-column:1/-1">
+      <h3>Logs</h3>
+      <div id="data" class="log" role="log" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <div class="footer">
+    <button id="connect-footer">🔗 Connect</button>
   </div>
 
-  <div class="controls">
-    <button id="connect">🔗 Connect</button>
-    <button id="start">▶️ Start</button>
-    <button id="stop">⏹ Stop</button>
-  </div>
+  <!-- Your existing script.js (IDs preserved) -->
+  <script>
+    // ---- Minimal glue so your existing script.js just works on mobile ----
+    // If you prefer, delete this block and keep only your external script.js.
 
-  <div class="readout">
-    <h3>Sensor Data</h3>
-    <p id="xyz">X: -- | Y: -- | Z: --</p>
-    <p id="encoder">Encoder: --</p>
-  </div>
+    let bleDevice = null, bleServer = null, bleService = null, bleCharacteristic = null;
 
-  <div class="log">
-    <h3>Logs</h3>
-    <div id="data"></div>
-  </div>
+    const SERVICE_UUID = "12345678-1234-1234-1234-1234567890ab";
+    const CHARACTERISTIC_UUID = "abcdefab-1234-1234-1234-abcdefabcdef";
 
-  <script src="script.js"></script>
+    const els = {
+      status: document.getElementById("status"),
+      statusPill: document.getElementById("status-pill"),
+      statusDot: document.getElementById("status-dot"),
+      btnConnect: document.getElementById("connect"),
+      btnConnectFooter: document.getElementById("connect-footer"),
+      btnStart: document.getElementById("start"),
+      btnStop: document.getElementById("stop"),
+      xyz: document.getElementById("xyz"),
+      encoder: document.getElementById("encoder"),
+      log: document.getElementById("data"),
+    };
+
+    function setPill(status, mode){ // mode: ok | bad | idle
+      els.status.textContent = status;
+      els.statusPill.classList.remove("status--ok","status--bad");
+      if(mode==="ok") els.statusPill.classList.add("status--ok");
+      else if(mode==="bad") els.statusPill.classList.add("status--bad");
+    }
+
+    function logToScreen(msg){
+      const p = document.createElement("p");
+      p.textContent = msg;
+      els.log.appendChild(p);
+      els.log.scrollTop = els.log.scrollHeight;
+      console.log(msg);
+    }
+
+    function parseNotificationValue(event){
+      const str = new TextDecoder().decode(event.target.value);
+      logToScreen("📨 Notification: " + str);
+      const m = str.match(/X:([-\d.]+)\s+Y:([-\d.]+)\s+Z:([-\d.]+)\s+ENC:(-?\d+)/i);
+      if (m) {
+        els.xyz.textContent = `X: ${m[1]} | Y: ${m[2]} | Z: ${m[3]}`;
+        els.encoder.textContent = `${m[4]}`;
+      }
+    }
+
+    async function connectFlow(){
+      try{
+        if(!navigator.bluetooth) throw new Error("Web Bluetooth not supported");
+        setPill("🔗 Connecting…","idle");
+        logToScreen("🔎 Requesting device…");
+        bleDevice = await navigator.bluetooth.requestDevice({
+          filters:[{ name:"ESP32C3-MotorBLE" }],
+          optionalServices:[SERVICE_UUID],
+        });
+        bleDevice.addEventListener("gattserverdisconnected", ()=> {
+          setPill("🔌 Not Connected","bad");
+          logToScreen("ℹ️ Disconnected");
+        });
+
+        const t0 = performance.now();
+        const server = await bleDevice.gatt.connect();
+        bleServer = server;
+        logToScreen(`✅ GATT connected (${Math.round(performance.now()-t0)}ms)`);
+
+        bleService = await bleServer.getPrimaryService(SERVICE_UUID);
+        bleCharacteristic = await bleService.getCharacteristic(CHARACTERISTIC_UUID);
+        await bleCharacteristic.startNotifications();
+        bleCharacteristic.addEventListener("characteristicvaluechanged", parseNotificationValue);
+
+        setPill("✅ Connected","ok");
+        logToScreen("📡 Notifications enabled");
+      }catch(err){
+        setPill("❌ Connection failed","bad");
+        logToScreen("❌ " + err.message);
+      }
+    }
+
+    async function send(cmd){
+      if(!bleCharacteristic){ logToScreen("⚠️ Not connected"); return; }
+      try{
+        await bleCharacteristic.writeValue(new TextEncoder().encode(cmd));
+        logToScreen(`✅ Sent "${cmd}"`);
+      }catch(e){ logToScreen(`❌ Send failed: ${e.message}`); }
+    }
+
+    // Wire up
+    els.btnConnect.addEventListener("click", connectFlow);
+    els.btnConnectFooter.addEventListener("click", connectFlow);
+    els.btnStart.addEventListener("click", ()=>send("START"));
+    els.btnStop.addEventListener("click", ()=>send("STOP"));
+
+    // Initial
+    setPill("🔌 Not Connected","idle");
+    logToScreen("Ready. Tap “Connect” to pair with ESP32C3-MotorBLE.");
+  </script>
 </body>
 </html>
