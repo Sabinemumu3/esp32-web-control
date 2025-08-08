@@ -2,29 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>BLE Motor Control</title>
-  <style>
-    body {
-      text-align: center;
-      font-family: Arial;
-    }
-    button {
-      font-size: 32px;
-      margin: 10px;
-      padding: 15px 25px;
-    }
-  </style>
+  <title>ESP32C3 BLE Control</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h2>🚗 BLE Motor Control</h2>
-  <button id="connect">🔗 Connect</button><br><br>
+  <h1>ESP32-C3 BLE Dashboard</h1>
 
-  <div>
-    <button id="up">⬆️</button><br>
-    <button id="left">⬅️</button>
-    <button id="stop">🟥</button>
-    <button id="right">➡️</button><br>
-    <button id="down">⬇️</button>
+  <div class="status-box">
+    <strong>Status:</strong> <span id="status">🔌 Not Connected</span>
+  </div>
+
+  <div class="controls">
+    <button id="connect">🔗 Connect</button>
+    <button id="start">▶️ Start</button>
+    <button id="stop">⏹ Stop</button>
+  </div>
+
+  <div class="readout">
+    <h3>Sensor Data</h3>
+    <p id="xyz">X: -- | Y: -- | Z: --</p>
+    <p id="encoder">Encoder: --</p>
+  </div>
+
+  <div class="log">
+    <h3>Logs</h3>
+    <div id="data"></div>
   </div>
 
   <script src="script.js"></script>
